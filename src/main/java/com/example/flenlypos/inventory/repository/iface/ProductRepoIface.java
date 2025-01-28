@@ -1,7 +1,6 @@
 package com.example.flenlypos.inventory.repository.iface;
 
 import com.example.flenlypos.inventory.model.dto.ProductDto;
-import com.example.flenlypos.inventory.model.table.Product;
 
 public interface ProductRepoIface {
     Integer add(ProductDto productDto);

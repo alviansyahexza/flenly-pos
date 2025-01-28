@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ApiResponse <T> extends Object{
+public class ApiResponse <T>{
     private T data;
     private String error;
 }

@@ -30,12 +30,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ProductControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
     @MockitoBean
-    private ProductRepoIface productRepoIface;
-    private final RandomString randomString = new RandomString(12);;
+    ProductRepoIface productRepoIface;
+    private final RandomString randomString = new RandomString(12);
     private final Random randomNum = new Random();
 
     @BeforeEach
@@ -182,7 +182,7 @@ public class ProductControllerTest {
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
                     ApiResponse apiResponse = objectMapper.readValue(contentAsString, ApiResponse.class);
-                    List<ProductDto> list = objectMapper.convertValue(apiResponse.getData(), List.class);
+                    List list = objectMapper.convertValue(apiResponse.getData(), List.class);
                     Assertions.assertNull(apiResponse.getError());
                     Assertions.assertTrue(list.size() <= 2);
                 });

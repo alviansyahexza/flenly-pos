@@ -1,7 +1,6 @@
 package com.example.flenlypos.repo.inventori;
 
 import com.example.flenlypos.inventory.model.dto.ProductDto;
-import com.example.flenlypos.inventory.model.table.Product;
 import com.example.flenlypos.inventory.repository.impl.ProductRepo;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
