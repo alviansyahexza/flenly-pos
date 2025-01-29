@@ -1,9 +1,15 @@
 package com.example.flenlypos.integration;
 
 import com.example.flenlypos.ApiResponse;
+import com.example.flenlypos.auth.model.dto.UserDto;
+import com.example.flenlypos.auth.model.form.SignIn;
+import com.example.flenlypos.auth.repository.iface.UserRepo;
+import com.example.flenlypos.auth.tools.security.UserRole;
 import com.example.flenlypos.customer.model.dto.CustomerDto;
 import com.example.flenlypos.customer.model.form.CustomerForm;
+import com.example.flenlypos.customer.repository.iface.CustomerRepo;
 import com.example.flenlypos.customer.repository.impl.CustomerRepoImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
@@ -14,8 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.Instant;
@@ -32,20 +40,36 @@ public class CustomerControllerTest {
     @Autowired
     ObjectMapper objectMapper;
     @MockitoBean
-    CustomerRepoImpl customerRepo;
+    CustomerRepo customerRepo;
+    @MockitoBean
+    UserRepo userRepo;
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     private final RandomString randomString = new RandomString(12);
     private final Random randomNum = new Random();
+    private String bearerToken;
 
     @BeforeEach
-    void init() {
+    void init() throws Exception {
         noCallRepo();
     }
 
-    private void noCallRepo() {
+    private void noCallRepo() throws Exception {
         CustomerDto customerDto = mockedCustomerDto();
         Mockito.doNothing().when(customerRepo).delete(Mockito.anyInt());
         Mockito.when(customerRepo.add(Mockito.any(CustomerDto.class))).thenReturn(1);
         Mockito.when(customerRepo.findById(Mockito.anyInt())).thenReturn(customerDto);
+
+        UserDto userDto = mockedUserDto();
+        String password = userDto.getPassword();
+        userDto.setPassword(passwordEncoder.encode(password));
+        Mockito.when(userRepo.findByUsername(userDto.getUsername())).thenReturn(userDto);
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .post("/auth/sign-in")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new SignIn(password, userDto.getUsername())));
+        mockMvc.perform(req).andExpect((res) -> bearerToken = res.getResponse().getContentAsString());
     }
 
     private CustomerDto mockedCustomerDto() {
@@ -60,12 +84,28 @@ public class CustomerControllerTest {
                 .build();
     }
 
+    private UserDto mockedUserDto() {
+        Instant now = Instant.now();
+        return new UserDto(){{
+            setId(randomNum.nextInt(1,10));
+            setUsername(randomString.nextString());
+            setPassword(randomString.nextString());
+            setRole(UserRole.ROOT.val()); // for MVP user ROOT for testing
+            setAuthorities(UserRole.ROOT.val()); // for MVP user ROOT for testing
+            setCreatedOn(now);
+            setLastUpdatedOn(now);
+            setDeletedOn(now);
+        }};
+    }
+
     @Test
     void noBody() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/customers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .post("/customers")
+                .header("Authorization", "Bearer " + bearerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(req).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -78,11 +118,14 @@ public class CustomerControllerTest {
                 mockedCustomerDto.getEmail(),
                 mockedCustomerDto.getPhone()
         );
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .post("/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/customers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andExpect((matcher) -> {
                     String contentAsString = matcher.getResponse().getContentAsString();
@@ -96,11 +139,13 @@ public class CustomerControllerTest {
     @Test
     void add_invalidBody() throws Exception {
         CustomerForm form = new CustomerForm("", "", "");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/customers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .post("/customers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(req)
                 .andExpect(status().isBadRequest())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -112,7 +157,10 @@ public class CustomerControllerTest {
 
     @Test
     void delete_success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/customers/" + Mockito.anyInt()))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .delete("/customers/" + 1)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -124,7 +172,10 @@ public class CustomerControllerTest {
 
     @Test
     void find_success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/customers/" + Mockito.anyInt()))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .get("/customers/" + 1)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();

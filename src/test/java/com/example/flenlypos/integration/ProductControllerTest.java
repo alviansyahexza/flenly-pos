@@ -1,9 +1,17 @@
 package com.example.flenlypos.integration;
 
 import com.example.flenlypos.ApiResponse;
+import com.example.flenlypos.auth.model.dto.UserDto;
+import com.example.flenlypos.auth.model.form.SignIn;
+import com.example.flenlypos.auth.repository.iface.UserRepo;
+import com.example.flenlypos.auth.repository.impl.UserRepoImpl;
+import com.example.flenlypos.auth.service.UserService;
+import com.example.flenlypos.auth.tools.security.UserRole;
 import com.example.flenlypos.inventory.model.dto.ProductDto;
 import com.example.flenlypos.inventory.model.form.ProductForm;
 import com.example.flenlypos.inventory.repository.iface.ProductRepo;
+import com.example.flenlypos.inventory.repository.impl.ProductRepoImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
@@ -14,8 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.Instant;
@@ -35,15 +46,21 @@ public class ProductControllerTest {
     ObjectMapper objectMapper;
     @MockitoBean
     ProductRepo productRepoIface;
+    @MockitoBean
+    UserRepo userRepo;
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     private final RandomString randomString = new RandomString(12);
     private final Random randomNum = new Random();
+    private String bearerToken;
 
     @BeforeEach
-    void init() {
+    void init() throws Exception {
         noCallRepo();
     }
 
-    private void noCallRepo() {
+    private void noCallRepo() throws Exception {
         ProductDto productDto = mockedProductDto();
         Mockito.doNothing().when(productRepoIface).delete(Mockito.anyInt());
         Mockito.doNothing().when(productRepoIface).update(Mockito.any());
@@ -52,6 +69,19 @@ public class ProductControllerTest {
         Mockito.when(productRepoIface.findAll()).thenReturn(new ArrayList<>(){{add(productDto);}});
         Mockito.when(productRepoIface.findAll(Mockito.anyInt(), Mockito.anyInt())).thenReturn(new ArrayList<>(){{add(productDto);}});
         Mockito.when(productRepoIface.findAll(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyBoolean())).thenReturn(new ArrayList<>(){{add(productDto);}});
+
+        UserDto userDto = mockedUserDto();
+        String password = userDto.getPassword();
+        userDto.setPassword(passwordEncoder.encode(password));
+        Mockito.when(userRepo.findByUsername(userDto.getUsername())).thenReturn(userDto);
+        mockMvc.perform(
+                MockMvcRequestBuilders.post("/auth/sign-in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new SignIn(password, userDto.getUsername())))
+                )
+                .andExpect((res) -> {
+                    bearerToken = res.getResponse().getContentAsString();
+                });
     }
 
     private ProductDto mockedProductDto() {
@@ -73,12 +103,28 @@ public class ProductControllerTest {
                 .build();
     }
 
+    private UserDto mockedUserDto() {
+        Instant now = Instant.now();
+        UserDto userDto = new UserDto(){{
+            setId(randomNum.nextInt(1,10));
+            setUsername(randomString.nextString());
+            setPassword(randomString.nextString());
+            setRole(UserRole.ROOT.val()); // for MVP user ROOT for testing
+            setAuthorities(UserRole.ROOT.val()); // for MVP user ROOT for testing
+            setCreatedOn(now);
+            setLastUpdatedOn(now);
+            setDeletedOn(now);
+        }};
+        return userDto;
+    }
+
     @Test
     void noBody() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -92,11 +138,12 @@ public class ProductControllerTest {
                 mockedProductDto.getStock(),
                 mockedProductDto.getQrCode()
         );
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andExpect((matcher) -> {
                     String contentAsString = matcher.getResponse().getContentAsString();
@@ -110,11 +157,12 @@ public class ProductControllerTest {
     @Test
     void add_invalidBody() throws Exception {
         ProductForm form = new ProductForm("", 0L, 0, "");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isBadRequest())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -125,7 +173,6 @@ public class ProductControllerTest {
                     Assertions.assertTrue(apiResponse.getError().contains("stock: must be greater than or equal to 1"));
                 });
     }
-
 
     @Test
     void update_success() throws Exception {
@@ -138,11 +185,12 @@ public class ProductControllerTest {
                 mockedProductDto.getStock(),
                 mockedProductDto.getQrCode()
         );
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/products/" + mockedProductDto.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.put("/products/" + mockedProductDto.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andExpect((matcher) -> {
                     String contentAsString = matcher.getResponse().getContentAsString();
@@ -156,11 +204,12 @@ public class ProductControllerTest {
     @Test
     void update_invalidBody() throws Exception {
         ProductForm form = new ProductForm("", 0L, 0, "");
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/products/" + -1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(form))
-                        .accept(MediaType.APPLICATION_JSON))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.put("/products/" + -1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(form))
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isBadRequest())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -174,10 +223,11 @@ public class ProductControllerTest {
 
     @Test
     void findAll_success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/products")
-                        .param("page", "1")
-                        .param("size", "2")
-                )
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/products")
+                .param("page", "1")
+                .param("size", "2")
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -190,10 +240,11 @@ public class ProductControllerTest {
 
     @Test
     void findAll_invalidParams() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/products")
-                        .param("page", "0")
-                        .param("size", "0")
-                )
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders.get("/products")
+                .param("page", "0")
+                .param("size", "0")
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isBadRequest())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -206,7 +257,10 @@ public class ProductControllerTest {
 
     @Test
     void delete_success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/products/" + Mockito.anyInt()))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .delete("/products/" + 1)
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
@@ -218,7 +272,10 @@ public class ProductControllerTest {
 
     @Test
     void find_success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/products/" + Mockito.anyInt()))
+        MockHttpServletRequestBuilder req = MockMvcRequestBuilders
+                .get("/products/" + Mockito.anyInt())
+                .header("Authorization", "Bearer " + bearerToken);
+        mockMvc.perform(req)
                 .andExpect(status().isOk())
                 .andDo((result) -> {
                     String contentAsString = result.getResponse().getContentAsString();
