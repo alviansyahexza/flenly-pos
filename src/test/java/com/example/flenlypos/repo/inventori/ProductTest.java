@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Random;
 
 /**
+ * NOT A BEST PRACTICE, JUST FOR MVP
  * Make sure to change application.properties
  * spring.jpa.hibernate.ddl-auto to create-drop
  * on literally testing database
@@ -92,11 +93,11 @@ public class ProductTest {
         Assertions.assertTrue(productDto.getDeletedOn().isBefore(Instant.now()));
 
         //test find all no deleted
-        Iterable<ProductDto> all = productRepo.findAll(0, 1);
+        Iterable<ProductDto> all = productRepo.findAll(1, 1);
         Assertions.assertTrue( !all.iterator().hasNext() || all.iterator().next().getDeletedOn() == null);
 
         //test find all with deleted
-        all = productRepo.findAll(0, 1, true);
+        all = productRepo.findAll(1, 1, true);
         Assertions.assertTrue(all.iterator().hasNext() && all.iterator().next().getDeletedOn().isBefore(Instant.now()));
     }
 }
