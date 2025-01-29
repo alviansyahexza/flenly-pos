@@ -3,7 +3,7 @@ package com.example.flenlypos.inventory.service;
 import com.example.flenlypos.inventory.model.dto.ProductDto;
 import com.example.flenlypos.inventory.model.form.ProductFindForm;
 import com.example.flenlypos.inventory.model.form.ProductForm;
-import com.example.flenlypos.inventory.repository.iface.ProductRepoIface;
+import com.example.flenlypos.inventory.repository.iface.ProductRepo;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -18,7 +18,7 @@ import java.util.Set;
 public class ProductService {
 
     @Autowired
-    ProductRepoIface productRepo;
+    ProductRepo productRepo;
     @Autowired
     Validator validator;
 

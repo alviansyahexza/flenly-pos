@@ -2,8 +2,8 @@ package com.example.flenlypos.inventory.repository.impl;
 
 import com.example.flenlypos.inventory.model.dto.ProductDto;
 import com.example.flenlypos.inventory.model.table.Product;
-import com.example.flenlypos.inventory.repository.iface.ProductRepoIface;
-import com.example.flenlypos.inventory.repository.iface.ProductRepoJpaIface;
+import com.example.flenlypos.inventory.repository.iface.ProductRepo;
+import com.example.flenlypos.inventory.repository.iface.ProductRepoJpa;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -11,10 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ProductRepo implements ProductRepoIface {
+public class ProductRepoImpl implements ProductRepo {
 
     @Autowired
-    ProductRepoJpaIface productRepoJpaIface;
+    ProductRepoJpa productRepoJpaIface;
 
     @Override
     public Integer add(ProductDto productDto) {

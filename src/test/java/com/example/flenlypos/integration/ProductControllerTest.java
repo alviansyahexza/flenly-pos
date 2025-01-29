@@ -3,7 +3,7 @@ package com.example.flenlypos.integration;
 import com.example.flenlypos.ApiResponse;
 import com.example.flenlypos.inventory.model.dto.ProductDto;
 import com.example.flenlypos.inventory.model.form.ProductForm;
-import com.example.flenlypos.inventory.repository.iface.ProductRepoIface;
+import com.example.flenlypos.inventory.repository.iface.ProductRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +34,7 @@ public class ProductControllerTest {
     @Autowired
     ObjectMapper objectMapper;
     @MockitoBean
-    ProductRepoIface productRepoIface;
+    ProductRepo productRepoIface;
     private final RandomString randomString = new RandomString(12);
     private final Random randomNum = new Random();
 

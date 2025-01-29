@@ -1,7 +1,7 @@
-package com.example.flenlypos.repo.inventori;
+package com.example.flenlypos.repo;
 
 import com.example.flenlypos.inventory.model.dto.ProductDto;
-import com.example.flenlypos.inventory.repository.impl.ProductRepo;
+import com.example.flenlypos.inventory.repository.impl.ProductRepoImpl;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import java.util.Random;
 public class ProductTest {
 
     @Autowired
-    ProductRepo productRepo;
+    ProductRepoImpl productRepo;
     RandomString randomString = new RandomString(12);
     Random randomNum = new Random(5);
 
