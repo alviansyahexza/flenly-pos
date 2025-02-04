@@ -12,15 +12,11 @@ import java.util.Optional;
 @Data
 @Entity
 @NoArgsConstructor
-@Table(name = "flenly_user")
-public class User {
+public class Store {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private String username;
-    private String password;
-    private String role;
-    private String authorities;
+    private String name;
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
     private Instant createdOn;
@@ -29,17 +25,4 @@ public class User {
     private Instant lastUpdatedOn;
     @Column(insertable = false, updatable = false)
     private Instant deletedOn;
-
-    private Integer storeId;
-    private Integer addedById;
-
-    public static User add(String username, String password, String role, int storeId, Optional<Integer> addedById) {
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setRole(role);
-        user.setStoreId(storeId);
-        addedById.ifPresent(user::setAddedById);
-        return user;
-    }
 }

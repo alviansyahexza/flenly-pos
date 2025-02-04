@@ -50,9 +50,9 @@ public class UserDto implements UserDetails {
         claims.put("password", this.password);
         claims.put("role", this.role);
         claims.put("authorities", this.authorities);
-        claims.put("createdOn", this.createdOn);
-        claims.put("lastUpdatedOn", this.lastUpdatedOn);
-        claims.put("deletedOn", this.deletedOn);
+        claims.put("createdOn", this.createdOn.toEpochMilli());
+        claims.put("lastUpdatedOn", this.lastUpdatedOn.toEpochMilli());
+        claims.put("deletedOn", this.deletedOn.toEpochMilli());
         claims.put("storeId", this.storeId);
         return claims;
     }

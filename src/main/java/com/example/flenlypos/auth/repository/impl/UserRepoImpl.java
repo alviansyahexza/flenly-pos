@@ -8,6 +8,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class UserRepoImpl implements UserRepo {
 
@@ -19,5 +21,12 @@ public class UserRepoImpl implements UserRepo {
         User byUsername = userRepoJpa.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException(username));
         return UserDto.fromUser(byUsername);
+    }
+
+    @Override
+    public int signUp(String username, String password, String role, int storeId, Optional<Integer> addedById) {
+        User user = User.add(username, password, role, storeId, addedById);
+        userRepoJpa.save(user);
+        return user.getId();
     }
 }

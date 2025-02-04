@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests((auth) ->
                         auth.requestMatchers("/auth/sign-in").permitAll()
+                                .requestMatchers("/auth/sign-up").permitAll()
                                 .requestMatchers("/products/**").hasRole(UserRole.ROOT.name())
                                 .anyRequest().authenticated()
                 );
