@@ -1,7 +1,5 @@
 package com.example.flenlypos.auth.tools.jwt;
 
-import com.example.flenlypos.auth.model.table.User;
-import com.example.flenlypos.auth.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,7 +19,7 @@ public class JwtFilter extends OncePerRequestFilter {
     JwtUtils jwtUtils;
 
     @Autowired
-    UserService userService;
+    UserDetailsService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, java.io.IOException {

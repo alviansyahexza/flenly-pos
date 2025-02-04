@@ -1,6 +1,5 @@
 package com.example.flenlypos.auth.tools.security;
 
-import com.example.flenlypos.auth.service.UserService;
 import com.example.flenlypos.auth.tools.jwt.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Autowired
-    UserService userService;
+    UserDetailsService userService;
 
     @Autowired
     JwtFilter jwtFilter;
