@@ -27,11 +27,14 @@ public class SecurityConfig {
     @Autowired
     JwtFilter jwtFilter;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authenticationManager(authenticationManager(userService, passwordEncoder()))
+                .authenticationManager(authenticationManager(userService, passwordEncoder))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests((auth) ->
                         auth.requestMatchers("/auth/sign-in").permitAll()
@@ -48,6 +51,10 @@ public class SecurityConfig {
         authenticationProvider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(authenticationProvider);
     }
+}
+
+@Configuration
+class EncoderConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {

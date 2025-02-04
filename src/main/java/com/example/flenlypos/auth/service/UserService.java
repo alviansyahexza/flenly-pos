@@ -13,6 +13,10 @@ public class UserService implements UserDetailsService {
 
     @Autowired
     UserRepo userRepo;
+    @Autowired
+    FValidator validator;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

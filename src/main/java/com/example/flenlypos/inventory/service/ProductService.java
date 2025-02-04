@@ -1,5 +1,6 @@
 package com.example.flenlypos.inventory.service;
 
+import com.example.flenlypos.FValidator;
 import com.example.flenlypos.inventory.model.dto.ProductDto;
 import com.example.flenlypos.inventory.model.form.ProductFindForm;
 import com.example.flenlypos.inventory.model.form.ProductForm;
@@ -20,15 +21,10 @@ public class ProductService {
     @Autowired
     ProductRepo productRepo;
     @Autowired
-    Validator validator;
-
-    private <T> void validateParamObject(T object) {
-        Set<ConstraintViolation<T>> errors = validator.validate(object);
-        if (!errors.isEmpty()) throw new ConstraintViolationException(errors);
-    }
+    FValidator validator;
 
     public ProductDto add(ProductForm params) {
-        validateParamObject(params);
+        validator.validateParam(params);
         ProductDto productDto = ProductDto.fromProductForm(params);
         int id = productRepo.add(productDto);
         return productRepo.findById(id);
@@ -36,7 +32,7 @@ public class ProductService {
 
     @Transactional
     public ProductDto update(int id, ProductForm params) {
-        validateParamObject(params);
+        validator.validateParam(params);
         ProductDto byId = productRepo.findById(id);
         byId.setName(params.getName());
         byId.setQrCode(params.getQrCode());
@@ -55,10 +51,7 @@ public class ProductService {
     }
 
     public List<ProductDto> findAll(ProductFindForm params) {
-        Set<ConstraintViolation<ProductFindForm>> errors = validator.validate(params);
-        errors.addAll(validator.validate(params));
-        if (!errors.isEmpty()) throw new ConstraintViolationException(errors);
-
+        validator.validateParam(params);
         return (List<ProductDto>) productRepo.findAll(params.getPage(), params.getSize());
     }
 }
