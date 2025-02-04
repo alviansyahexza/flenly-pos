@@ -1,5 +1,6 @@
 package com.example.flenlypos.auth.tools.jwt;
 
+import com.example.flenlypos.auth.model.dto.UserDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -19,9 +20,9 @@ public class JwtUtils {
     public static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
 
     // Generate token with given user name
-    public String generateToken(String userName) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userName);
+    public String generateToken(UserDto userDto) {
+        Map<String, Object> claims = userDto.toMap();
+        return createToken(claims, userDto.getUsername());
     }
 
     // Create a JWT token with specified claims and subject (username)

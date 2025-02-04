@@ -11,7 +11,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -25,6 +27,7 @@ public class UserDto implements UserDetails {
     private Instant createdOn;
     private Instant lastUpdatedOn;
     private Instant deletedOn;
+    private Integer storeId;
 
     public static UserDto fromUser(User user) {
         return new UserDto(){{
@@ -36,7 +39,22 @@ public class UserDto implements UserDetails {
             setCreatedOn(user.getCreatedOn());
             setLastUpdatedOn(user.getLastUpdatedOn());
             setDeletedOn(user.getDeletedOn());
+            setStoreId(user.getStoreId());
         }};
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", this.id);
+        claims.put("username", this.username);
+        claims.put("password", this.password);
+        claims.put("role", this.role);
+        claims.put("authorities", this.authorities);
+        claims.put("createdOn", this.createdOn);
+        claims.put("lastUpdatedOn", this.lastUpdatedOn);
+        claims.put("deletedOn", this.deletedOn);
+        claims.put("storeId", this.storeId);
+        return claims;
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities() {

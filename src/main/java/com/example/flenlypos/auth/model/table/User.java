@@ -5,13 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
 
 @Data
 @Entity
@@ -32,4 +28,17 @@ public class User {
     private Instant lastUpdatedOn;
     @Column(insertable = false, updatable = false)
     private Instant deletedOn;
+
+    private Integer storeId;
+    private Integer addedById;
+
+    public static User add(String username, String password, String role, int storeId, Optional<Integer> addedById) {
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setRole(role);
+        user.setStoreId(storeId);
+        addedById.ifPresent(user::setAddedById);
+        return user;
+    }
 }
