@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface StoreRepoJpa extends CrudRepository<Store, Long> {
+public interface StoreRepoJpa extends CrudRepository<Store, Integer> {
 }
